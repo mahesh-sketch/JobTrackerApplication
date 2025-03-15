@@ -10,8 +10,11 @@ namespace server.Models
         public int RoleID { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation Property (EF Core links User to Role table)
-        public Role? Role { get; set; }
-    }
+        // New properties for refresh token handling
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
 
+        // Navigation Property (EF Core links User to Role table)
+        public Role? Role { get; set; } = null!; //Required the Role
+    }
 }

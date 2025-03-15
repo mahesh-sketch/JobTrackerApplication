@@ -104,6 +104,7 @@ D:\Job Tracker\server\obj\Debug\net8.0\server.AssemblyInfo.cs
 D:\Job Tracker\server\obj\Debug\net8.0\server.csproj.CoreCompileInputs.cache
 D:\Job Tracker\server\obj\Debug\net8.0\server.MvcApplicationPartsAssemblyInfo.cs
 D:\Job Tracker\server\obj\Debug\net8.0\server.MvcApplicationPartsAssemblyInfo.cache
+D:\Job Tracker\server\obj\Debug\net8.0\server.sourcelink.json
 D:\Job Tracker\server\obj\Debug\net8.0\staticwebassets.build.json
 D:\Job Tracker\server\obj\Debug\net8.0\staticwebassets.development.json
 D:\Job Tracker\server\obj\Debug\net8.0\staticwebassets\msbuild.server.Microsoft.AspNetCore.StaticWebAssets.props

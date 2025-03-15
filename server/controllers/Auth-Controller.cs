@@ -16,11 +16,10 @@ namespace Server.Controllers
         private readonly ApplicationDbContext _context;
         private readonly JwtHelper _jwtHelper;
 
-        // Inject JwtHelper through constructor
         public AuthController(ApplicationDbContext context, JwtHelper jwtHelper)
         {
             _context = context;
-            _jwtHelper = jwtHelper; // Assign JwtHelper to the field
+            _jwtHelper = jwtHelper;
         }
 
         // REGISTER
@@ -40,18 +39,25 @@ namespace Server.Controllers
                 LastName = request.LastName,
                 Email = request.Email,
                 PasswordHash = HashPassword(request.Password),
-                RoleID = role.RoleID
+                RoleID = role.RoleID,
+                RefreshToken = _jwtHelper.GenerateRefreshToken(),
+                RefreshTokenExpiry = DateTime.UtcNow.AddDays(7)
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok(new UserResponse
+
+            return Ok(new
             {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                Role = role.RoleName
+                message = "Register successful!",
+                user = new UserResponse
+                {
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    Role = role.RoleName
+                }
             });
         }
 
@@ -64,11 +70,17 @@ namespace Server.Controllers
                 return Unauthorized("Invalid email or password.");
 
             var token = _jwtHelper.GenerateJwtToken(user.Email, user.Role?.RoleName ?? "User");
+            var refreshToken = _jwtHelper.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 message = "Login successful!",
                 token,
+                refreshToken,
                 user = new UserResponse
                 {
                     FirstName = user.FirstName,
@@ -77,6 +89,24 @@ namespace Server.Controllers
                     Role = user.Role?.RoleName ?? "User"
                 }
             });
+        }
+
+        // REFRESH TOKEN
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshRequest request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+            if (user == null || user.RefreshTokenExpiry <= DateTime.UtcNow)
+                return Unauthorized("Invalid refresh token.");
+
+            var newToken = _jwtHelper.GenerateJwtToken(user.Email, user.Role?.RoleName ?? "User");
+            var newRefreshToken = _jwtHelper.GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { token = newToken, refreshToken = newRefreshToken });
         }
 
         // Password Hashing

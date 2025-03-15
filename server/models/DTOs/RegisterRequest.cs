@@ -18,6 +18,9 @@ namespace server.Models.DTOs
         [MinLength(6, ErrorMessage = "Password must be at least 6 characters long")]
         public string Password { get; set; } = string.Empty;
 
-        public string Role { get; set; } = "User";
+        [Required(ErrorMessage = "Role is required")]
+        [RegularExpression("^(Employee|Employer)$", ErrorMessage = "Role must be either 'Employee' or 'Employer'")]
+        public string Role { get; set; } = "Employee";
+
     }
 }

@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -17,22 +18,12 @@ namespace server.Helpers
 
         public string GenerateJwtToken(string email, string role)
         {
-            var jwtSettings = _configuration.GetSection("Jwt");
-
-            // Safely retrieve "Key", "Issuer", and "Audience"
-            var key = jwtSettings["Key"];
-            var issuer = jwtSettings["Issuer"];
-            var audience = jwtSettings["Audience"];
-
-            // Ensure all required values are present
-            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(audience))
+            var jwtKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
             {
-                throw new InvalidOperationException("JWT settings are not configured properly.");
+                throw new ArgumentNullException(nameof(jwtKey), "JWT key cannot be null or empty.");
             }
-
-            var keyBytes = Encoding.ASCII.GetBytes(key); // Now safe
-
-            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(jwtKey);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
@@ -40,14 +31,21 @@ namespace server.Helpers
                     new Claim(ClaimTypes.Email, email),
                     new Claim(ClaimTypes.Role, role)
                 }),
-                Expires = DateTime.UtcNow.AddHours(2),
-                Issuer = issuer,
-                Audience = audience,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
+                Expires = DateTime.UtcNow.AddMinutes(Convert.ToInt32(_configuration["Jwt:AccessTokenExpirationMinutes"])),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
+            var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
     }
 }

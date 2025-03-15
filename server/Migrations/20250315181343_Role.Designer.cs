@@ -12,8 +12,8 @@ using server.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250314181017_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250315181343_Role")]
+    partial class Role
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -45,12 +45,12 @@ namespace server.Migrations
                         new
                         {
                             RoleID = 1,
-                            RoleName = "Admin"
+                            RoleName = "Employee"
                         },
                         new
                         {
                             RoleID = 2,
-                            RoleName = "User"
+                            RoleName = "Employer"
                         });
                 });
 
@@ -81,6 +81,12 @@ namespace server.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("RefreshTokenExpiry")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("RoleID")
                         .HasColumnType("int");
 
@@ -99,7 +105,7 @@ namespace server.Migrations
                     b.HasOne("server.Models.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Role");
