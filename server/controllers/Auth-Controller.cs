@@ -26,12 +26,25 @@ namespace Server.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.FirstName) ||
+                string.IsNullOrWhiteSpace(request.LastName) ||
+                string.IsNullOrWhiteSpace(request.Email) ||
+                string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest("All fields are required.");
+            }
+
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
                 return BadRequest("Email already in use.");
 
+            var validRoles = new[] { "Employee", "Employer" };
+            if (!validRoles.Contains(request.Role))
+                return BadRequest("Invalid role. Choose 'Employee' or 'Employer'.");
+
             var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == request.Role);
             if (role == null)
-                return BadRequest("Invalid role. Choose 'Admin' or 'User'.");
+                return BadRequest("Role not found in database.");
+
 
             var user = new User
             {
@@ -47,10 +60,10 @@ namespace Server.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-
             return Ok(new
             {
-                message = "Register successful!",
+                success = true,
+                message = "Registration successful!",
                 user = new UserResponse
                 {
                     FirstName = user.FirstName,
@@ -60,6 +73,7 @@ namespace Server.Controllers
                 }
             });
         }
+
 
         // LOGIN
         [HttpPost("login")]
